@@ -17,6 +17,7 @@
 #include <config.h>
 #include "classifier.h"
 #include "classifier-private.h"
+#include "dt-classifier.h"
 #include <errno.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -47,6 +48,17 @@ struct cls_conjunction_set {
     unsigned int min_n_clauses; /* Smallest 'n' among elements of 'conj'. */
     struct cls_conjunction conj[];
 };
+
+/* Helper macros to access TSS backend fields */
+#define CLS_N_RULES(cls)          ((cls)->tss.n_rules)
+#define CLS_N_FLOW_SEGMENTS(cls)  ((cls)->tss.n_flow_segments)
+#define CLS_FLOW_SEGMENTS(cls)    ((cls)->tss.flow_segments)
+#define CLS_SUBTABLES_MAP(cls)    ((cls)->tss.subtables_map)
+#define CLS_SUBTABLES(cls)        ((cls)->tss.subtables)
+#define CLS_PARTITIONS(cls)       ((cls)->tss.partitions)
+#define CLS_TRIES(cls)            ((cls)->tss.tries)
+#define CLS_N_TRIES(cls)          ((cls)->tss.n_tries)
+#define CLS_PUBLISH(cls)          ((cls)->tss.publish)
 
 /* Ports trie depends on both ports sharing the same ovs_be32. */
 #define TP_PORTS_OFS32 (offsetof(struct flow, tp_src) / 4)
@@ -318,25 +330,115 @@ cls_rule_visible_in_version(const struct cls_rule *rule, ovs_version_t version)
 
     return cls_match && cls_match_visible_in_version(cls_match, version);
 }
-
+
+/* TSS-specific initialization */
+static void
+classifier_init_tss(struct classifier *cls, const uint8_t *flow_segments)
+{
+    struct classifier_tss *tss = &cls->tss;
+    
+    tss->n_rules = 0;
+    cmap_init(&tss->subtables_map);
+    pvector_init(&tss->subtables);
+    tss->n_flow_segments = 0;
+    if (flow_segments) {
+        while (tss->n_flow_segments < CLS_MAX_INDICES
+               && *flow_segments < FLOW_U64S) {
+            tss->flow_segments[tss->n_flow_segments++] = *flow_segments++;
+        }
+    }
+    memset(tss->tries, 0, sizeof tss->tries);
+    atomic_store_explicit(&tss->n_tries, 0, memory_order_release);
+    tss->publish = true;
+    
+    cls->dt = NULL; /* No DT backend */
+}
+
+/* DT-specific initialization */
+static void
+classifier_init_dt(struct classifier *cls)
+{
+    cls->dt = xmalloc(sizeof(struct decision_tree));
+    dt_init(cls->dt);
+    
+    /* Initialize TSS to empty state (for compatibility) */
+    memset(&cls->tss, 0, sizeof cls->tss);
+}
+
 /* Initializes 'cls' as a classifier that initially contains no classification
- * rules. */
+ * rules.
+ * 
+ * 'backend_config' can be:
+ *   - NULL: use default (TSS)
+ *   - "tss": use Tuple Space Search
+ *   - "dt": use Decision Tree
+ */
 void
 classifier_init(struct classifier *cls, const uint8_t *flow_segments)
 {
-    cls->n_rules = 0;
-    cmap_init(&cls->subtables_map);
-    pvector_init(&cls->subtables);
-    cls->n_flow_segments = 0;
-    if (flow_segments) {
-        while (cls->n_flow_segments < CLS_MAX_INDICES
-               && *flow_segments < FLOW_U64S) {
-            cls->flow_segments[cls->n_flow_segments++] = *flow_segments++;
+    classifier_init_with_backend(cls, flow_segments, NULL);
+}
+
+void
+classifier_init_with_backend(struct classifier *cls, 
+                            const uint8_t *flow_segments,
+                            const char *backend_config)
+{
+    /* Determine backend type from config */
+    enum classifier_backend_type backend = CLASSIFIER_BACKEND_TSS; /* default */
+    
+    if (backend_config) {
+        if (strcmp(backend_config, "dt") == 0) {
+            backend = CLASSIFIER_BACKEND_DT;
+        } else if (strcmp(backend_config, "tss") == 0) {
+            backend = CLASSIFIER_BACKEND_TSS;
         }
+        /* else: invalid config, use default TSS */
     }
-    memset(cls->tries, 0, sizeof cls->tries);
-    atomic_store_explicit(&cls->n_tries, 0, memory_order_release);
-    cls->publish = true;
+    
+    cls->backend = backend;
+    
+    switch (backend) {
+    case CLASSIFIER_BACKEND_TSS:
+        classifier_init_tss(cls, flow_segments);
+        break;
+        
+    case CLASSIFIER_BACKEND_DT:
+        classifier_init_dt(cls);
+        break;
+    }
+}
+
+/* TSS-specific destroy */
+static void
+classifier_destroy_tss(struct classifier *cls)
+{
+    struct classifier_tss *tss = &cls->tss;
+    struct cls_subtable *subtable;
+    uint32_t i, n_tries;
+
+    atomic_read_relaxed(&tss->n_tries, &n_tries);
+    for (i = 0; i < n_tries; i++) {
+        trie_destroy(&tss->tries[i]);
+    }
+
+    CMAP_FOR_EACH (subtable, cmap_node, &tss->subtables_map) {
+        destroy_subtable(cls, subtable);
+    }
+    cmap_destroy(&tss->subtables_map);
+
+    pvector_destroy(&tss->subtables);
+}
+
+/* DT-specific destroy */
+static void
+classifier_destroy_dt(struct classifier *cls)
+{
+    if (cls->dt) {
+        dt_destroy(cls->dt);
+        free(cls->dt);
+        cls->dt = NULL;
+    }
 }
 
 /* Destroys 'cls'.  Rules within 'cls', if any, are not freed; this is the
@@ -346,20 +448,15 @@ void
 classifier_destroy(struct classifier *cls)
 {
     if (cls) {
-        struct cls_subtable *subtable;
-        uint32_t i, n_tries;
-
-        atomic_read_relaxed(&cls->n_tries, &n_tries);
-        for (i = 0; i < n_tries; i++) {
-            trie_destroy(&cls->tries[i]);
+        switch (cls->backend) {
+        case CLASSIFIER_BACKEND_TSS:
+            classifier_destroy_tss(cls);
+            break;
+            
+        case CLASSIFIER_BACKEND_DT:
+            classifier_destroy_dt(cls);
+            break;
         }
-
-        CMAP_FOR_EACH (subtable, cmap_node, &cls->subtables_map) {
-            destroy_subtable(cls, subtable);
-        }
-        cmap_destroy(&cls->subtables_map);
-
-        pvector_destroy(&cls->subtables);
     }
 }
 
@@ -375,7 +472,7 @@ classifier_set_prefix_fields(struct classifier *cls,
     uint32_t first_changed = 0;
     bool changed = false;
 
-    atomic_read_relaxed(&cls->n_tries, &old_n_tries);
+    atomic_read_relaxed(&CLS_N_TRIES(cls), &old_n_tries);
 
     for (i = 0; i < n_fields && n_tries < CLS_MAX_TRIES; i++) {
         const struct mf_field *field = mf_from_id(trie_fields[i]);
@@ -395,7 +492,7 @@ classifier_set_prefix_fields(struct classifier *cls,
         bitmap_set1(fields.bm, trie_fields[i]);
 
         new_fields[n_tries] = NULL;
-        if (n_tries >= old_n_tries || field != cls->tries[n_tries].field) {
+        if (n_tries >= old_n_tries || field != CLS_TRIES(cls)[n_tries].field) {
             new_fields[n_tries] = field;
             if (!changed) {
                 first_changed = n_tries;
@@ -418,24 +515,24 @@ classifier_set_prefix_fields(struct classifier *cls,
          *
          * This store can be relaxed because ovsrcu_synchronize() functions as
          * a memory barrier. */
-        atomic_store_relaxed(&cls->n_tries, first_changed);
+        atomic_store_relaxed(&CLS_N_TRIES(cls), first_changed);
         ovsrcu_synchronize();
 
         /* Now set up the tries for new and changed fields. */
         for (i = first_changed; i < n_tries; i++) {
             if (new_fields[i]) {
-                trie_destroy(&cls->tries[i]);
+                trie_destroy(&CLS_TRIES(cls)[i]);
                 trie_init(cls, i, new_fields[i]);
             }
         }
         /* Destroy the rest, if any. */
         for (; i < old_n_tries; i++) {
-            trie_destroy(&cls->tries[i]);
+            trie_destroy(&CLS_TRIES(cls)[i]);
         }
 
         /* Re-enable trie lookups.  Using release memory order, so all the
          * previous stores are visible in the classifier_lookup(). */
-        atomic_store_explicit(&cls->n_tries, n_tries, memory_order_release);
+        atomic_store_explicit(&CLS_N_TRIES(cls), n_tries, memory_order_release);
         return true;
     }
 
@@ -445,7 +542,7 @@ classifier_set_prefix_fields(struct classifier *cls,
 static void
 trie_init(struct classifier *cls, int trie_idx, const struct mf_field *field)
 {
-    struct cls_trie *trie = &cls->tries[trie_idx];
+    struct cls_trie *trie = &CLS_TRIES(cls)[trie_idx];
     struct cls_subtable *subtable;
 
     ovs_assert(field);
@@ -455,7 +552,7 @@ trie_init(struct classifier *cls, int trie_idx, const struct mf_field *field)
     ovsrcu_set_hidden(&trie->root, NULL);
 
     /* Add existing rules to the new trie. */
-    CMAP_FOR_EACH (subtable, cmap_node, &cls->subtables_map) {
+    CMAP_FOR_EACH (subtable, cmap_node, &CLS_SUBTABLES_MAP(cls)) {
         unsigned int plen;
 
         plen = minimask_get_prefix_len(&subtable->mask, field);
@@ -476,16 +573,37 @@ trie_init(struct classifier *cls, int trie_idx, const struct mf_field *field)
 bool
 classifier_is_empty(const struct classifier *cls)
 {
-    return cmap_is_empty(&cls->subtables_map);
+    /* DT backend */
+    if (cls->backend == CLASSIFIER_BACKEND_DT) {
+        if (cls->dt) {
+            size_t n_rules, n_internal, n_leaf, max_depth;
+            dt_get_stats(cls->dt, &n_rules, &n_internal, &n_leaf, &max_depth);
+            return n_rules == 0;
+        }
+        return true;
+    }
+    
+    /* TSS backend */
+    return cmap_is_empty(&CLS_SUBTABLES_MAP(cls));
 }
 
 /* Returns the number of rules in 'cls'. */
 int
 classifier_count(const struct classifier *cls)
 {
-    /* n_rules is an int, so in the presence of concurrent writers this will
+    /* DT backend */
+    if (cls->backend == CLASSIFIER_BACKEND_DT) {
+        if (cls->dt) {
+            size_t n_rules, n_internal, n_leaf, max_depth;
+            dt_get_stats(cls->dt, &n_rules, &n_internal, &n_leaf, &max_depth);
+            return (int)n_rules;
+        }
+        return 0;
+    }
+    
+    /* TSS backend: n_rules is an int, so in the presence of concurrent writers this will
      * return either the old or a new value. */
-    return cls->n_rules;
+    return CLS_N_RULES(cls);
 }
 
 static inline ovs_be32 minimatch_get_ports(const struct minimatch *match)
@@ -552,10 +670,10 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
          *
          * Concurrent readers might miss seeing the rule until this update,
          * which might require being fixed up by revalidation later. */
-        atomic_read_relaxed(&cls->n_tries, &n_tries);
+        atomic_read_relaxed(&CLS_N_TRIES(cls), &n_tries);
         for (i = 0; i < n_tries; i++) {
             if (subtable->trie_plen[i]) {
-                trie_insert(&cls->tries[i], rule, subtable->trie_plen[i]);
+                trie_insert(&CLS_TRIES(cls)[i], rule, subtable->trie_plen[i]);
             }
         }
 
@@ -580,7 +698,7 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
         struct cls_match *prev, *iter;
 
         /* Scan the list for the insertion point that will keep the list in
-         * order of decreasing priority.  Insert after rules marked invisible
+         * order of decreasing priority.  Insert   after rules marked invisible
          * in any version of the same priority. */
         FOR_EACH_RULE_IN_LIST_PROTECTED (iter, prev, head) {
             if (rule->priority > iter->priority
@@ -610,7 +728,7 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
                              &new->cmap_node, hash);
             }
 
-            if (old) {
+            if (old) {//replace rule
                 struct cls_conjunction_set *conj_set;
 
                 conj_set = ovsrcu_get_protected(struct cls_conjunction_set *,
@@ -658,20 +776,20 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
     if (n_rules == 1) {
         subtable->max_priority = rule->priority;
         subtable->max_count = 1;
-        pvector_insert(&cls->subtables, subtable, rule->priority);
+        pvector_insert(&CLS_SUBTABLES(cls), subtable, rule->priority);
     } else if (rule->priority == subtable->max_priority) {
         ++subtable->max_count;
     } else if (rule->priority > subtable->max_priority) {
         subtable->max_priority = rule->priority;
         subtable->max_count = 1;
-        pvector_change_priority(&cls->subtables, subtable, rule->priority);
+        pvector_change_priority(&CLS_SUBTABLES(cls), subtable, rule->priority);
     }
 
     /* Nothing was replaced. */
-    cls->n_rules++;
+    CLS_N_RULES(cls)++;
 
-    if (cls->publish) {
-        pvector_publish(&cls->subtables);
+    if (CLS_PUBLISH(cls)) {
+        pvector_publish(&CLS_SUBTABLES(cls));
     }
 
     return NULL;
@@ -688,6 +806,15 @@ classifier_insert(struct classifier *cls, const struct cls_rule *rule,
                   ovs_version_t version, const struct cls_conjunction conj[],
                   size_t n_conj)
 {
+    /* DT backend uses lazy insertion */
+    if (cls->backend == CLASSIFIER_BACKEND_DT) {
+        if (cls->dt) {
+            dt_add_rule_lazy(cls->dt, rule);
+        }
+        return;
+    }
+    
+    /* TSS backend */
     const struct cls_rule *displaced_rule
         = classifier_replace(cls, rule, version, conj, n_conj);
     ovs_assert(!displaced_rule);
@@ -705,6 +832,15 @@ classifier_insert(struct classifier *cls, const struct cls_rule *rule,
 bool
 classifier_remove(struct classifier *cls, const struct cls_rule *cls_rule)
 {
+    /* DT backend */
+    if (cls->backend == CLASSIFIER_BACKEND_DT) {
+        if (cls->dt) {
+            return dt_remove_rule(cls->dt, cls_rule);
+        }
+        return false;
+    }
+    
+    /* TSS backend */
     struct cls_match *rule, *prev, *next, *head;
     struct cls_conjunction_set *conj_set;
     struct cls_subtable *subtable;
@@ -775,10 +911,10 @@ classifier_remove(struct classifier *cls, const struct cls_rule *cls_rule)
         trie_remove_prefix(&subtable->ports_trie,
                            &masked_ports, subtable->ports_mask_len);
     }
-    atomic_read_relaxed(&cls->n_tries, &n_tries);
+    atomic_read_relaxed(&CLS_N_TRIES(cls), &n_tries);
     for (i = 0; i < n_tries; i++) {
         if (subtable->trie_plen[i]) {
-            trie_remove(&cls->tries[i], cls_rule, subtable->trie_plen[i]);
+            trie_remove(&CLS_TRIES(cls)[i], cls_rule, subtable->trie_plen[i]);
         }
     }
 
@@ -805,12 +941,12 @@ check_priority:
                 }
             }
             subtable->max_priority = max_priority;
-            pvector_change_priority(&cls->subtables, subtable, max_priority);
+            pvector_change_priority(&CLS_SUBTABLES(cls), subtable, max_priority);
         }
     }
 
-    if (cls->publish) {
-        pvector_publish(&cls->subtables);
+    if (CLS_PUBLISH(cls)) {
+        pvector_publish(&CLS_SUBTABLES(cls));
     }
 
     /* free the rule. */
@@ -820,7 +956,7 @@ check_priority:
         ovsrcu_postpone(free, conj_set);
     }
     ovsrcu_postpone(cls_match_free_cb, rule);
-    cls->n_rules--;
+    CLS_N_RULES(cls)--;
 
     return true;
 }
@@ -988,23 +1124,23 @@ classifier_lookup__(const struct classifier *cls, ovs_version_t version,
 
     uint32_t n_tries;
 
-    /* Using memory_order_acquire on cls->n_tries to make sure that all the
+    /* Using memory_order_acquire on CLS_N_TRIES(cls) to make sure that all the
      * configuration changes for these tries are fully visible after the read.
      *
      * Trie configuration changes typically happen on startup, but can also
      * happen in runtime. */
-    atomic_read_explicit(&CONST_CAST(struct classifier *, cls)->n_tries,
+    atomic_read_explicit(&CLS_N_TRIES(CONST_CAST(struct classifier *, cls)),
                          &n_tries, memory_order_acquire);
 
     /* Initialize trie contexts for find_match_wc(). */
     for (uint32_t i = 0; i < n_tries; i++) {
-        trie_ctx_init(&trie_ctx[i], &cls->tries[i]);
+        trie_ctx_init(&trie_ctx[i], &CLS_TRIES(cls)[i]);
     }
 
     /* Main loop. */
     struct cls_subtable *subtable;
     PVECTOR_FOR_EACH_PRIORITY (subtable, hard_pri + 1, 2, sizeof *subtable,
-                               &cls->subtables) {
+                               &CLS_SUBTABLES(cls)) {
         struct cls_conjunction_set *conj_set;
 
         /* Skip subtables with no match, or where the match is lower-priority
@@ -1211,6 +1347,15 @@ classifier_lookup(const struct classifier *cls, ovs_version_t version,
                   struct flow *flow, struct flow_wildcards *wc,
                   struct hmapx *conj_flows)
 {
+    /* DT backend */
+    if (cls->backend == CLASSIFIER_BACKEND_DT) {
+        if (cls->dt) {
+            return dt_lookup(cls->dt, version, flow, wc);
+        }
+        return NULL;
+    }
+    
+    /* TSS backend */
     return classifier_lookup__(cls, version, flow, wc, true, conj_flows);
 }
 
@@ -1303,7 +1448,7 @@ classifier_rule_overlaps(const struct classifier *cls,
 
     /* Iterate subtables in the descending max priority order. */
     PVECTOR_FOR_EACH_PRIORITY (subtable, target->priority, 2,
-                               sizeof(struct cls_subtable), &cls->subtables) {
+                               sizeof(struct cls_subtable), &CLS_SUBTABLES(cls)) {
         struct {
             struct minimask mask;
             uint64_t storage[FLOW_U64S];
@@ -1423,7 +1568,7 @@ cls_cursor_start(const struct classifier *cls, const struct cls_rule *target,
 
     /* Find first rule. */
     PVECTOR_CURSOR_FOR_EACH (subtable, &cursor.subtables,
-                             &cursor.cls->subtables) {
+                             &CLS_SUBTABLES(cursor.cls)) {
         const struct cls_rule *rule = search_subtable(subtable, &cursor);
 
         if (rule) {
@@ -1475,7 +1620,7 @@ find_subtable(const struct classifier *cls, const struct minimask *mask)
     struct cls_subtable *subtable;
 
     CMAP_FOR_EACH_WITH_HASH (subtable, cmap_node, minimask_hash(mask, 0),
-                             &cls->subtables_map) {
+                             &CLS_SUBTABLES_MAP(cls)) {
         if (minimask_equal(mask, &subtable->mask)) {
             return subtable;
         }
@@ -1550,9 +1695,9 @@ insert_subtable(struct classifier *cls, const struct minimask *mask)
 
     /* Init indices for segmented lookup, if any. */
     prev = 0;
-    for (i = 0; i < cls->n_flow_segments; i++) {
+    for (i = 0; i < CLS_N_FLOW_SEGMENTS(cls); i++) {
         stage_map = miniflow_get_map_in_range(&mask->masks, prev,
-                                              cls->flow_segments[i]);
+                                              CLS_FLOW_SEGMENTS(cls)[i]);
         /* Add an index if it adds mask bits. */
         if (!flowmap_is_empty(stage_map)) {
             ccmap_init(&subtable->indices[index]);
@@ -1560,7 +1705,7 @@ insert_subtable(struct classifier *cls, const struct minimask *mask)
                 = stage_map;
             index++;
         }
-        prev = cls->flow_segments[i];
+        prev = CLS_FLOW_SEGMENTS(cls)[i];
     }
     /* Map for the final stage. */
     *CONST_CAST(struct flowmap *, &subtable->index_maps[index])
@@ -1576,10 +1721,10 @@ insert_subtable(struct classifier *cls, const struct minimask *mask)
     }
     *CONST_CAST(uint8_t *, &subtable->n_indices) = index;
 
-    atomic_read_relaxed(&cls->n_tries, &n_tries);
+    atomic_read_relaxed(&CLS_N_TRIES(cls), &n_tries);
     for (i = 0; i < n_tries; i++) {
         subtable->trie_plen[i] = minimask_get_prefix_len(mask,
-                                                         cls->tries[i].field);
+                                                         CLS_TRIES(cls)[i].field);
     }
 
     /* Ports trie. */
@@ -1590,7 +1735,7 @@ insert_subtable(struct classifier *cls, const struct minimask *mask)
     /* List of rules. */
     rculist_init(&subtable->rules_list);
 
-    cmap_insert(&cls->subtables_map, &subtable->cmap_node, hash);
+    cmap_insert(&CLS_SUBTABLES_MAP(cls), &subtable->cmap_node, hash);
 
     return subtable;
 }
@@ -1599,8 +1744,8 @@ insert_subtable(struct classifier *cls, const struct minimask *mask)
 static void
 destroy_subtable(struct classifier *cls, struct cls_subtable *subtable)
 {
-    pvector_remove(&cls->subtables, subtable);
-    cmap_remove(&cls->subtables_map, &subtable->cmap_node,
+    pvector_remove(&CLS_SUBTABLES(cls), subtable);
+    cmap_remove(&CLS_SUBTABLES_MAP(cls), &subtable->cmap_node,
                 minimask_hash(&subtable->mask, 0));
 
     ovsrcu_postpone(subtable_destroy_cb, subtable);
@@ -1718,7 +1863,8 @@ find_match(const struct cls_subtable *subtable, ovs_version_t version,
 
 static const struct cls_match *
 find_match_wc(const struct cls_subtable *subtable, ovs_version_t version,
-              const struct flow *flow, struct trie_ctx *trie_ctx,
+              const struct flow *flow, 
+              struct trie_ctx *trie_ctx,
               uint32_t n_tries, struct flow_wildcards *wc)
 {
     if (OVS_UNLIKELY(!wc)) {

@@ -1,0 +1,317 @@
+/bin/bash ./libtool  --tag=CC   --mode=link gcc -Wstrict-prototypes -Wall -Wextra -Wno-sign-compare -Wpointer-arith -Wformat -Wformat-security -Wswitch-enum -Wunused-parameter -Wbad-function-cast -Wcast-align -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-field-initializers -fno-strict-aliasing -Wswitch-bool -Wlogical-not-parentheses -Wsizeof-array-argument -Wbool-compare -Wshift-negative-value -Wduplicated-cond -Wshadow -Wmultistatement-macros -Wcast-align=strict    -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wno-unused -Wno-unused-parameter -g -O2 -release 3.6 -version-info 0:90 -Wl,--version-script=./lib/libsflow.sym     -o lib/libsflow.la -rpath /usr/local/lib lib/lib_libsflow_la-sflow_agent.lo lib/lib_libsflow_la-sflow_sampler.lo lib/lib_libsflow_la-sflow_poller.lo lib/lib_libsflow_la-sflow_receiver.lo  -latomic -lm 
+libtool: link: ar cru lib/.libs/libsflow.a  lib/lib_libsflow_la-sflow_agent.o lib/lib_libsflow_la-sflow_sampler.o lib/lib_libsflow_la-sflow_poller.o lib/lib_libsflow_la-sflow_receiver.o
+ar: `u' modifier ignored since `D' is the default (see `U')
+libtool: link: ranlib lib/.libs/libsflow.a
+libtool: link: ( cd "lib/.libs" && rm -f "libsflow.la" && ln -s "../libsflow.la" "libsflow.la" )
+depbase=`echo ovsdb/ovsdb-server.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+gcc -DHAVE_CONFIG_H -I.    -I ./include -I ./include -I ./lib -I ./lib    -Wstrict-prototypes -Wall -Wextra -Wno-sign-compare -Wpointer-arith -Wformat -Wformat-security -Wswitch-enum -Wunused-parameter -Wbad-function-cast -Wcast-align -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-field-initializers -fno-strict-aliasing -Wswitch-bool -Wlogical-not-parentheses -Wsizeof-array-argument -Wbool-compare -Wshift-negative-value -Wduplicated-cond -Wshadow -Wmultistatement-macros -Wcast-align=strict    -g -O2 -MT ovsdb/ovsdb-server.o -MD -MP -MF $depbase.Tpo -c -o ovsdb/ovsdb-server.o ovsdb/ovsdb-server.c &&\
+mv -f $depbase.Tpo $depbase.Po
+/bin/bash ./libtool  --tag=CC   --mode=link gcc -Wstrict-prototypes -Wall -Wextra -Wno-sign-compare -Wpointer-arith -Wformat -Wformat-security -Wswitch-enum -Wunused-parameter -Wbad-function-cast -Wcast-align -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-field-initializers -fno-strict-aliasing -Wswitch-bool -Wlogical-not-parentheses -Wsizeof-array-argument -Wbool-compare -Wshift-negative-value -Wduplicated-cond -Wshadow -Wmultistatement-macros -Wcast-align=strict    -g -O2 -release 3.6 -version-info 0:90 -Wl,--version-script=./ovsdb/libovsdb.sym     -o ovsdb/libovsdb.la -rpath /usr/local/lib ovsdb/ovsdb_libovsdb_la-column.lo ovsdb/ovsdb_libovsdb_la-condition.lo ovsdb/ovsdb_libovsdb_la-execution.lo ovsdb/ovsdb_libovsdb_la-file.lo ovsdb/ovsdb_libovsdb_la-jsonrpc-server.lo ovsdb/ovsdb_libovsdb_la-log.lo ovsdb/ovsdb_libovsdb_la-mutation.lo ovsdb/ovsdb_libovsdb_la-ovsdb.lo ovsdb/ovsdb_libovsdb_la-monitor.lo ovsdb/ovsdb_libovsdb_la-query.lo ovsdb/ovsdb_libovsdb_la-raft.lo ovsdb/ovsdb_libovsdb_la-raft-private.lo ovsdb/ovsdb_libovsdb_la-raft-rpc.lo ovsdb/ovsdb_libovsdb_la-rbac.lo ovsdb/ovsdb_libovsdb_la-replication.lo ovsdb/ovsdb_libovsdb_la-relay.lo ovsdb/ovsdb_libovsdb_la-row.lo ovsdb/ovsdb_libovsdb_la-server.lo ovsdb/ovsdb_libovsdb_la-storage.lo ovsdb/ovsdb_libovsdb_la-table.lo ovsdb/ovsdb_libovsdb_la-trigger.lo ovsdb/ovsdb_libovsdb_la-transaction.lo ovsdb/ovsdb_libovsdb_la-transaction-forward.lo ovsdb/ovsdb_libovsdb_la-ovsdb-util.lo  -latomic -lm 
+libtool: link: ar cru ovsdb/.libs/libovsdb.a  ovsdb/ovsdb_libovsdb_la-column.o ovsdb/ovsdb_libovsdb_la-condition.o ovsdb/ovsdb_libovsdb_la-execution.o ovsdb/ovsdb_libovsdb_la-file.o ovsdb/ovsdb_libovsdb_la-jsonrpc-server.o ovsdb/ovsdb_libovsdb_la-log.o ovsdb/ovsdb_libovsdb_la-mutation.o ovsdb/ovsdb_libovsdb_la-ovsdb.o ovsdb/ovsdb_libovsdb_la-monitor.o ovsdb/ovsdb_libovsdb_la-query.o ovsdb/ovsdb_libovsdb_la-raft.o ovsdb/ovsdb_libovsdb_la-raft-private.o ovsdb/ovsdb_libovsdb_la-raft-rpc.o ovsdb/ovsdb_libovsdb_la-rbac.o ovsdb/ovsdb_libovsdb_la-replication.o ovsdb/ovsdb_libovsdb_la-relay.o ovsdb/ovsdb_libovsdb_la-row.o ovsdb/ovsdb_libovsdb_la-server.o ovsdb/ovsdb_libovsdb_la-storage.o ovsdb/ovsdb_libovsdb_la-table.o ovsdb/ovsdb_libovsdb_la-trigger.o ovsdb/ovsdb_libovsdb_la-transaction.o ovsdb/ovsdb_libovsdb_la-transaction-forward.o ovsdb/ovsdb_libovsdb_la-ovsdb-util.o
+ar: `u' modifier ignored since `D' is the default (see `U')
+In file included from ovsdb/ovsdb-server.c:1221:
+./ovsdb/_server.ovsschema.inc: In function ‘add_server_db’:
+./ovsdb/_server.ovsschema.inc:1:1: warning: missing terminating " character
+    1 | "{\"name\": \"_Server\",
+      | ^
+./ovsdb/_server.ovsschema.inc:1:1: error: missing terminating " character
+    1 | "{\"name\": \"_Server\",
+      | ^~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:2:1: error: stray ‘\’ in program
+    2 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:2:3: warning: missing terminating " character
+    2 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:2:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:3:1: warning: missing terminating " character
+    3 | " \"version\": \"1.2.0\",
+      | ^
+./ovsdb/_server.ovsschema.inc:3:1: error: missing terminating " character
+    3 | " \"version\": \"1.2.0\",
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:4:1: error: stray ‘\’ in program
+    4 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:2:2: error: ‘n’ undeclared (first use in this function)
+    2 | \n"
+      |  ^
+./ovsdb/_server.ovsschema.inc:2:2: note: each undeclared identifier is reported only once for each function it appears in
+./ovsdb/_server.ovsschema.inc:2:3: error: expected ‘)’ before ‘n’
+    2 | \n"
+      |   ^
+      |   )
+    3 | " \"version\": \"1.2.0\",
+    4 | \n"
+      |  ~ 
+ovsdb/ovsdb-server.c:1220:48: note: to match this ‘(’
+ 1220 |     struct json *schema_json = json_from_string(
+      |                                                ^
+./ovsdb/_server.ovsschema.inc:4:3: warning: missing terminating " character
+    4 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:4:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:5:1: warning: missing terminating " character
+    5 | " \"cksum\": \"3009684573 744\",
+      | ^
+./ovsdb/_server.ovsschema.inc:5:1: error: missing terminating " character
+    5 | " \"cksum\": \"3009684573 744\",
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:6:1: error: stray ‘\’ in program
+    6 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:6:3: warning: missing terminating " character
+    6 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:6:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:7:1: warning: missing terminating " character
+    7 | " \"tables\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:7:1: error: missing terminating " character
+    7 | " \"tables\": {
+      | ^~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:8:1: error: stray ‘\’ in program
+    8 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:8:3: warning: missing terminating " character
+    8 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:8:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:9:1: warning: missing terminating " character
+    9 | "   \"Database\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:9:1: error: missing terminating " character
+    9 | "   \"Database\": {
+      | ^~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:10:1: error: stray ‘\’ in program
+   10 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:10:3: warning: missing terminating " character
+   10 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:10:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:11:1: warning: missing terminating " character
+   11 | "     \"columns\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:11:1: error: missing terminating " character
+   11 | "     \"columns\": {
+      | ^~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:12:1: error: stray ‘\’ in program
+   12 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:12:3: warning: missing terminating " character
+   12 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:12:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:13:1: warning: missing terminating " character
+   13 | "       \"name\": {\"type\": \"string\"},
+      | ^
+./ovsdb/_server.ovsschema.inc:13:1: error: missing terminating " character
+   13 | "       \"name\": {\"type\": \"string\"},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:14:1: error: stray ‘\’ in program
+   14 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:14:3: warning: missing terminating " character
+   14 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:14:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:15:1: warning: missing terminating " character
+   15 | "       \"model\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:15:1: error: missing terminating " character
+   15 | "       \"model\": {
+      | ^~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:16:1: error: stray ‘\’ in program
+   16 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:16:3: warning: missing terminating " character
+   16 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:16:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:17:1: warning: missing terminating " character
+   17 | "         \"type\": {\"key\": {\"type\": \"string\",
+      | ^
+./ovsdb/_server.ovsschema.inc:17:1: error: missing terminating " character
+   17 | "         \"type\": {\"key\": {\"type\": \"string\",
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:18:1: error: stray ‘\’ in program
+   18 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:18:3: warning: missing terminating " character
+   18 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:18:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:19:1: warning: missing terminating " character
+   19 | "                          \"enum\": [\"set\",
+      | ^
+./ovsdb/_server.ovsschema.inc:19:1: error: missing terminating " character
+   19 | "                          \"enum\": [\"set\",
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:20:1: error: stray ‘\’ in program
+   20 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:20:3: warning: missing terminating " character
+   20 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:20:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:21:1: warning: missing terminating " character
+   21 | "                                     [\"standalone\", \"clustered\", \"relay\"]]}}},
+      | ^
+./ovsdb/_server.ovsschema.inc:21:1: error: missing terminating " character
+   21 | "                                     [\"standalone\", \"clustered\", \"relay\"]]}}},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:22:1: error: stray ‘\’ in program
+   22 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:22:3: warning: missing terminating " character
+   22 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:22:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:23:1: warning: missing terminating " character
+   23 | "       \"connected\": {\"type\": \"boolean\"},
+      | ^
+./ovsdb/_server.ovsschema.inc:23:1: error: missing terminating " character
+   23 | "       \"connected\": {\"type\": \"boolean\"},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:24:1: error: stray ‘\’ in program
+   24 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:24:3: warning: missing terminating " character
+   24 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:24:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:25:1: warning: missing terminating " character
+   25 | "       \"leader\": {\"type\": \"boolean\"},
+      | ^
+./ovsdb/_server.ovsschema.inc:25:1: error: missing terminating " character
+   25 | "       \"leader\": {\"type\": \"boolean\"},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:26:1: error: stray ‘\’ in program
+   26 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:26:3: warning: missing terminating " character
+   26 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:26:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:27:1: warning: missing terminating " character
+   27 | "       \"schema\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:27:1: error: missing terminating " character
+   27 | "       \"schema\": {
+      | ^~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:28:1: error: stray ‘\’ in program
+   28 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:28:3: warning: missing terminating " character
+   28 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:28:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:29:1: warning: missing terminating " character
+   29 | "         \"type\": {\"key\": {\"type\": \"string\"}, \"min\": 0, \"max\": 1}},
+      | ^
+./ovsdb/_server.ovsschema.inc:29:1: error: missing terminating " character
+   29 | "         \"type\": {\"key\": {\"type\": \"string\"}, \"min\": 0, \"max\": 1}},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:30:1: error: stray ‘\’ in program
+   30 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:30:3: warning: missing terminating " character
+   30 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:30:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:31:1: warning: missing terminating " character
+   31 | "       \"cid\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:31:1: error: missing terminating " character
+   31 | "       \"cid\": {
+      | ^~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:32:1: error: stray ‘\’ in program
+   32 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:32:3: warning: missing terminating " character
+   32 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:32:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:33:1: warning: missing terminating " character
+   33 | "         \"type\": {\"key\": {\"type\": \"uuid\"}, \"min\": 0, \"max\": 1}},
+      | ^
+./ovsdb/_server.ovsschema.inc:33:1: error: missing terminating " character
+   33 | "         \"type\": {\"key\": {\"type\": \"uuid\"}, \"min\": 0, \"max\": 1}},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:34:1: error: stray ‘\’ in program
+   34 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:34:3: warning: missing terminating " character
+   34 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:34:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:35:1: warning: missing terminating " character
+   35 | "       \"sid\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:35:1: error: missing terminating " character
+   35 | "       \"sid\": {
+      | ^~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:36:1: error: stray ‘\’ in program
+   36 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:36:3: warning: missing terminating " character
+   36 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:36:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:37:1: warning: missing terminating " character
+   37 | "         \"type\": {\"key\": {\"type\": \"uuid\"}, \"min\": 0, \"max\": 1}},
+      | ^
+./ovsdb/_server.ovsschema.inc:37:1: error: missing terminating " character
+   37 | "         \"type\": {\"key\": {\"type\": \"uuid\"}, \"min\": 0, \"max\": 1}},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:38:1: error: stray ‘\’ in program
+   38 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:38:3: warning: missing terminating " character
+   38 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:38:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:39:1: warning: missing terminating " character
+   39 | "       \"index\": {
+      | ^
+./ovsdb/_server.ovsschema.inc:39:1: error: missing terminating " character
+   39 | "       \"index\": {
+      | ^~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:40:1: error: stray ‘\’ in program
+   40 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:40:3: warning: missing terminating " character
+   40 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:40:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:41:1: warning: missing terminating " character
+   41 | "         \"type\": {\"key\": {\"type\": \"integer\"}, \"min\": 0, \"max\": 1}}},
+      | ^
+./ovsdb/_server.ovsschema.inc:41:1: error: missing terminating " character
+   41 | "         \"type\": {\"key\": {\"type\": \"integer\"}, \"min\": 0, \"max\": 1}}},
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:42:1: error: stray ‘\’ in program
+   42 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:42:3: warning: missing terminating " character
+   42 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:42:3: error: missing terminating " character
+./ovsdb/_server.ovsschema.inc:43:1: warning: missing terminating " character
+   43 | "     \"isRoot\": true}}}
+      | ^
+./ovsdb/_server.ovsschema.inc:43:1: error: missing terminating " character
+   43 | "     \"isRoot\": true}}}
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~
+./ovsdb/_server.ovsschema.inc:44:1: error: stray ‘\’ in program
+   44 | \n"
+      | ^
+./ovsdb/_server.ovsschema.inc:44:3: warning: missing terminating " character
+   44 | \n"
+      |   ^
+./ovsdb/_server.ovsschema.inc:44:3: error: missing terminating " character
+make: *** [Makefile:4543: ovsdb/ovsdb-server.o] Error 1
+make: *** Waiting for unfinished jobs....
+libtool: link: ranlib ovsdb/.libs/libovsdb.a
+libtool: link: ( cd "ovsdb/.libs" && rm -f "libovsdb.la" && ln -s "../libovsdb.la" "libovsdb.la" )

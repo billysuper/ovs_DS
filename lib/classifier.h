@@ -306,9 +306,18 @@
 #include "openvswitch/type-props.h"
 #include "versions.h"
 
+/* Forward declaration for decision tree */
+struct decision_tree;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Classifier backend types */
+enum classifier_backend_type {
+    CLASSIFIER_BACKEND_TSS,  /* Tuple Space Search (default) */
+    CLASSIFIER_BACKEND_DT,   /* Decision Tree */
+};
 
 /* Classifier internal data structures. */
 struct cls_subtable;
@@ -328,8 +337,8 @@ enum {
     CLS_MAX_TRIES = 4,     /* Maximum number of prefix trees per classifier. */
 };
 
-/* A flow classifier. */
-struct classifier {
+/* TSS-specific classifier data */
+struct classifier_tss {
     int n_rules;                    /* Total number of rules. */
     uint8_t n_flow_segments;
     uint8_t flow_segments[CLS_MAX_INDICES]; /* Flow segment boundaries to use
@@ -342,6 +351,17 @@ struct classifier {
                                      * memory synchronization point for trie
                                      * configuration. */
     bool publish;                   /* Make changes visible to lookups? */
+};
+
+/* A flow classifier with multiple backend support. */
+struct classifier {
+    enum classifier_backend_type backend; /* Backend type */
+    
+    /* TSS backend (always present for backward compatibility) */
+    struct classifier_tss tss;
+    
+    /* DT backend (only allocated if DT is selected) */
+    struct decision_tree *dt;
 };
 
 struct cls_conjunction {
@@ -361,6 +381,9 @@ struct cls_rule {
 
 /* Constructor/destructor.  Must run single-threaded. */
 void classifier_init(struct classifier *, const uint8_t *flow_segments);
+void classifier_init_with_backend(struct classifier *, 
+                                 const uint8_t *flow_segments,
+                                 const char *backend_config);
 void classifier_destroy(struct classifier *);
 
 /* Modifiers.  Caller MUST exclude concurrent calls from other threads. */
@@ -463,18 +486,24 @@ void cls_cursor_advance(struct cls_cursor *);
           : false);                                                     \
         )
 
-
+
 static inline void
 classifier_defer(struct classifier *cls)
 {
-    cls->publish = false;
+    if (cls->backend == CLASSIFIER_BACKEND_TSS) {
+        cls->tss.publish = false;
+    }
+    /* DT doesn't use deferred mode */
 }
 
 static inline void
 classifier_publish(struct classifier *cls)
 {
-    cls->publish = true;
-    pvector_publish(&cls->subtables);
+    if (cls->backend == CLASSIFIER_BACKEND_TSS) {
+        cls->tss.publish = true;
+        pvector_publish(&cls->tss.subtables);
+    }
+    /* DT doesn't use deferred mode */
 }
 
 #ifdef __cplusplus

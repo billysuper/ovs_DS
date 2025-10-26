@@ -457,6 +457,9 @@ tests_ovstest_SOURCES = \
 	tests/test-conntrack.c \
 	tests/test-cooperative-multitasking.c \
 	tests/test-csum.c \
+	tests/test-dt-bulk.c \
+	tests/test-dt-lazy.c \
+	tests/test-dt-lazy-realistic.c \
 	tests/test-flows.c \
 	tests/test-hash.c \
 	tests/test-heap.c \

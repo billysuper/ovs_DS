@@ -9274,8 +9274,28 @@ eviction_group_add_rule(struct rule *rule)
 static void
 oftable_init(struct oftable *table)
 {
+    const char *backend_config;
+    static bool logged_backend = false;
+    
     memset(table, 0, sizeof *table);
-    classifier_init(&table->cls, flow_segment_u64s);
+    
+    /* Check for classifier backend configuration.
+     * Priority: Environment variable > OVSDB (future) > Default (TSS) */
+    backend_config = getenv("OVS_CLASSIFIER_BACKEND");
+    
+    /* Log backend selection once */
+    if (!logged_backend) {
+        if (backend_config && strcmp(backend_config, "dt") == 0) {
+            VLOG_INFO("Using Decision Tree classifier backend");
+        } else {
+            VLOG_INFO("Using TSS (Tuple Space Search) classifier backend (default)");
+        }
+        logged_backend = true;
+    }
+    
+    /* Initialize classifier with configured backend */
+    classifier_init_with_backend(&table->cls, flow_segment_u64s, backend_config);
+    
     table->max_flows = UINT_MAX;
     table->n_flows = 0;
     hmap_init(&table->eviction_groups_by_id);

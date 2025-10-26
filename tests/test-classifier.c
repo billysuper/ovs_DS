@@ -441,7 +441,7 @@ compare_classifiers(struct classifier *cls, size_t n_invisible_rules,
         flow.nw_tos = nw_dscp_values[get_value(&x, N_NW_DSCP_VALUES)];
 
         /* This assertion is here to suppress a GCC 4.9 array-bounds warning */
-        atomic_read_relaxed(&cls->n_tries, &n_tries);
+        atomic_read_relaxed(&cls->tss.n_tries, &n_tries);
         ovs_assert(n_tries <= CLS_MAX_TRIES);
 
         cr0 = classifier_lookup(cls, version, &flow, &wc, NULL);
@@ -515,11 +515,11 @@ verify_tries(struct classifier *cls)
     unsigned int n_rules;
     uint32_t i, n_tries;
 
-    atomic_read_explicit(&cls->n_tries, &n_tries, memory_order_acquire);
+    atomic_read_explicit(&cls->tss.n_tries, &n_tries, memory_order_acquire);
     for (i = 0; i < n_tries; i++) {
-        n_rules = trie_verify(&cls->tries[i].root, 0,
-                              cls->tries[i].field->n_bits);
-        assert(n_rules <= cls->n_rules);
+        n_rules = trie_verify(&cls->tss.tries[i].root, 0,
+                              cls->tss.tries[i].field->n_bits);
+        assert(n_rules <= cls->tss.n_rules);
     }
 }
 
@@ -538,8 +538,8 @@ check_tables(const struct classifier *cls, int n_tables, int n_rules,
     int found_visible_but_removable = 0;
     int found_rules2 = 0;
 
-    pvector_verify(&cls->subtables);
-    CMAP_FOR_EACH (table, cmap_node, &cls->subtables_map) {
+    pvector_verify(&cls->tss.subtables);
+    CMAP_FOR_EACH (table, cmap_node, &cls->tss.subtables_map) {
         const struct cls_match *head;
         int max_priority = INT_MIN;
         unsigned int max_count = 0;
@@ -548,7 +548,7 @@ check_tables(const struct classifier *cls, int n_tables, int n_rules,
         const struct cls_subtable *iter;
 
         /* Locate the subtable from 'subtables'. */
-        PVECTOR_FOR_EACH (iter, &cls->subtables) {
+        PVECTOR_FOR_EACH (iter, &cls->tss.subtables) {
             if (iter == table) {
                 if (found) {
                     ovs_abort(0, "Subtable %p duplicated in 'subtables'.",
@@ -651,8 +651,8 @@ check_tables(const struct classifier *cls, int n_tables, int n_rules,
         assert(table->max_count == max_count);
     }
 
-    assert(found_tables == cmap_count(&cls->subtables_map));
-    assert(found_tables == pvector_count(&cls->subtables));
+    assert(found_tables == cmap_count(&cls->tss.subtables_map));
+    assert(found_tables == pvector_count(&cls->tss.subtables));
     assert(n_tables == -1 || n_tables == found_tables_with_visible_rules);
     assert(n_rules == -1 || found_rules == n_rules + found_invisible);
     assert(n_dups == -1 || found_dups == n_dups);
