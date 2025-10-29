@@ -1,0 +1,32 @@
+AT_BANNER([decision tree classifier])
+
+AT_SETUP([decision tree - empty tree])
+AT_CHECK([ovstest test-dt-classifier empty], [0], [PASSED: empty tree test
+])
+AT_CLEANUP
+
+AT_SETUP([decision tree - single rule])
+AT_CHECK([ovstest test-dt-classifier single-rule], [0], [PASSED: single rule test
+])
+AT_CLEANUP
+
+AT_SETUP([decision tree - priority ordering])
+AT_CHECK([ovstest test-dt-classifier priority], [0], [PASSED: priority ordering test
+])
+AT_CLEANUP
+
+AT_SETUP([decision tree - dual classifier verification])
+AT_CHECK([ovstest test-dt-classifier dual], [0], [ignore])
+AT_CLEANUP
+
+AT_SETUP([decision tree - many rules])
+AT_CHECK([ovstest test-dt-classifier many], [0], [ignore])
+AT_CLEANUP
+
+AT_SETUP([decision tree - benchmark])
+AT_CHECK([ovstest test-dt-classifier benchmark], [0], [ignore])
+AT_CLEANUP
+
+AT_SETUP([decision tree - all tests])
+AT_CHECK([ovstest test-dt-classifier], [0], [ignore])
+AT_CLEANUP

@@ -37,6 +37,7 @@ TESTSUITE_AT = \
 	tests/heap.at \
 	tests/bundle.at \
 	tests/classifier.at \
+	tests/dt-classifier.at \
 	tests/check-structs.at \
 	tests/daemon.at \
 	tests/daemon-py.at \
@@ -452,6 +453,7 @@ tests_ovstest_SOURCES = \
 	tests/test-byte-order.c \
 	tests/test-byteq.c \
 	tests/test-classifier.c \
+	tests/test-dt-classifier.c \
 	tests/test-ccmap.c \
 	tests/test-cmap.c \
 	tests/test-conntrack.c \

@@ -1,0 +1,55 @@
+決策樹測試快速參考
+==================
+
+編譯
+----
+make tests/ovstest
+
+執行全部測試
+----------
+./tests/ovstest test-dt-classifier
+
+執行單一測試
+----------
+./tests/ovstest test-dt-classifier empty         # 空樹測試
+./tests/ovstest test-dt-classifier single-rule   # 單一規則
+./tests/ovstest test-dt-classifier priority      # 優先權測試
+./tests/ovstest test-dt-classifier dual          # 雙分類器驗證
+./tests/ovstest test-dt-classifier many          # 200 規則壓力測試
+./tests/ovstest test-dt-classifier benchmark     # 效能基準測試
+
+測試結果
+--------
+✓ PASSED - 測試通過
+✗ FAILED - 測試失敗 (會顯示錯誤的流量編號)
+
+關鍵數字
+--------
+- 1,600 個獨特測試流量
+- 50 規則 (dual 測試)
+- 200 規則 (many 測試)
+- 500 規則 (benchmark 測試)
+- 100,000 次查找 (benchmark)
+
+除錯
+----
+# 啟用除錯日誌
+ovs-appctl vlog/set dt_classifier:dbg
+
+# 使用 gdb
+gdb --args ./tests/ovstest test-dt-classifier dual
+
+測試涵蓋範圍
+----------
+✓ 空樹處理
+✓ 單一規則匹配
+✓ 優先權排序
+✓ 多規則正確性
+✓ 大規模壓力測試
+✓ 查找效能
+
+預期效能
+--------
+建樹時間: 10-50 ms (500 規則)
+吞吐量: 10,000-50,000 lookups/ms
+延遲: 20-100 μs/lookup
