@@ -7,6 +7,7 @@
 #include "ovs-rcu.h"
 #include "pvector.h"
 #include "versions.h"
+#include "util.h"  /* For ovs_assert */
 
 /* Decision Tree Node Types */
 enum dt_node_type {
@@ -147,6 +148,22 @@ bool dt_add_rule_lazy(struct decision_tree *dt, const struct cls_rule *rule);
 /* Automatically uses lazy insertion before tree is built, COW after */
 bool dt_insert_rule(struct decision_tree *dt, const struct cls_rule *rule,
                     ovs_version_t version);
+
+/* Insert rule and assert no duplicate exists (mimics classifier_insert behavior) */
+static inline void
+dt_insert(struct decision_tree *dt, const struct cls_rule *rule,
+          ovs_version_t version)
+{
+    /* Check for existing rule with same match and priority */
+    const struct cls_rule *displaced = dt_find_rule_exactly(dt, rule, version);
+    
+    /* TSS asserts here - we do the same */
+    ovs_assert(!displaced);
+    
+    /* Insert the rule */
+    dt_insert_rule(dt, rule, version);
+}
+
 bool dt_remove_rule(struct decision_tree *dt, const struct cls_rule *rule);
 
 /* Rule replacement (returns displaced rule if any) */

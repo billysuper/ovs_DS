@@ -697,14 +697,32 @@ dt_add_rule_lazy(struct decision_tree *dt, const struct cls_rule *rule)
 /* Supports defer/publish mode for batch operations */
 bool
 dt_insert_rule(struct decision_tree *dt, const struct cls_rule *rule,
-               ovs_version_t version OVS_UNUSED)
+               ovs_version_t version)
 {
     /* Phase 1: Before tree is built - use lazy insertion */
     if (!dt->tree_built) {
         return dt_add_rule_lazy(dt, rule);
     }
     
-    /* Phase 2: After tree is built - use COW insertion */
+    /* Phase 2: After tree is built - check for existing rule first */
+    
+    /* Check if there's already a rule with the same match and priority.
+     * This mimics TSS behavior: classifier_insert() calls classifier_replace()
+     * and asserts no displacement occurred. */
+    const struct cls_rule *existing = dt_find_rule_exactly(dt, rule, version);
+    
+    if (existing) {
+        /* This should not happen - caller should use dt_replace_rule() instead.
+         * TSS would assert here, but we'll be lenient and replace. */
+        VLOG_WARN("dt_insert_rule: rule with same match and priority already exists "
+                  "(priority=%d). Replacing it.", rule->priority);
+        
+        /* Remove existing rule first, then continue with insertion */
+        dt_remove_rule(dt, existing);
+        /* Continue with insertion below */
+    }
+    
+    /* Phase 3: Perform COW insertion */
     
     /* Get the working root (temp_root if deferred, root otherwise) */
     struct dt_node **working_root_ptr = dt_get_working_root_ptr(dt);
